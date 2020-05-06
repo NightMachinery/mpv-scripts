@@ -23,15 +23,17 @@ function download_subs()
             '-l', language[2], '-d', directory, filename
         }
     }
-    result = utils.subprocess(table)
-
-    if string.find(result.stdout, 'Downloaded 1 subtitle') then
+    res = utils.subprocess(table)
+    -- if string.find(result.stdout, 'Downloaded 1 subtitle') then
+    if res.status == 0 then
         -- Subtitles are downloaded successfully, so rescan to activate them:
-        mp.commandv('rescan_external_files')
+        mp.commandv('rescan_external_files', 'reselect')
         log('Subtitles ready!')
     else
         log('No subtitles were found')
     end
+
+    mp.msg.info(res.stdout)
 end
 
 -- Control function: only download if necessary
