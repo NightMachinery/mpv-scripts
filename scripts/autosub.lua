@@ -70,5 +70,5 @@ function control_download()
     download_subs()
 end
 
-mp.register_event('file-loaded', control_download)
+-- mp.register_event('file-loaded', control_download)
 mp.add_key_binding('ctrl+j', 'download_subs', download_subs) 
