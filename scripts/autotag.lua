@@ -9,20 +9,27 @@ function exec(cmd)
   local f = assert(io.popen(cmd, 'r'))
   local s = assert(f:read('*a'))
   f:close()
-  return s
+  return trim1(s)
+end
+function trim1(s)
+   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 local function tagger(event)
-  local path = mp.get_property("path")
+  local path_prop = "stream-open-filename"
+  -- local path_prop = "path"
+  local path = mp.get_property(path_prop)
   local cwd = utils.getcwd()
   if path == nil or cwd == nil then
     do return end
   end
-
+  -- @weird According to the doc, the path is the same as the cli arg. So why is this working with absolute path args?!
   local abs_path = utils.join_path(cwd, path)
+
   local new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(abs_path)))
   log("Greened: " .. new_path)
-  -- mp.set_property("path", new_path) -- doesn't work https://github.com/mpv-player/mpv/issues/8154
+  mp.set_property(path_prop, new_path) -- doesn't work https://github.com/mpv-player/mpv/issues/8154
+  mp.set_property("path", new_path)
   -- log("Updated path: " .. mp.get_property("path"))
   
   function mg(event)
@@ -52,3 +59,24 @@ local function tagger(event)
 end
 
 mp.register_event("file-loaded", tagger)
+-- mp.register_event("file-loaded", function() log("Updated path: " .. mp.get_property("path")) end)
+-- mp.add_hook("on_load", 0, tagger)
+
+local function load_renamer(hook)
+  local path_prop = "stream-open-filename"
+  local path = mp.get_property(path_prop)
+  local cwd = utils.getcwd()
+  if path == nil or cwd == nil then
+    do return end
+  end
+  -- @weird According to the doc, the path is the same as the cli arg. So why is this working with absolute path args?!
+  local abs_path = utils.join_path(cwd, path)
+
+  local new_path = (exec(("brishzq.zsh ntag-recoverpath %q"):format(abs_path)))
+  if not (abs_path == new_path) then
+    log("load_renamer's new path: " .. new_path)
+  end
+  mp.set_property("stream-open-filename", new_path)
+end
+mp.add_hook("on_load", 0, load_renamer)
+-- mp.add_hook("on_load_fail", 0, load_renamer) -- enabling this might provide useful redundancy in race conditions?
