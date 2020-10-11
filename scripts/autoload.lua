@@ -1,3 +1,12 @@
+function exec(cmd)
+  local f = assert(io.popen(cmd, 'r'))
+  local s = assert(f:read('*a'))
+  f:close()
+  return trim1(s)
+end
+function trim1(s)
+   return (s:gsub("^%s*(.-)%s*$", "%1"))
+end
 -- This script automatically loads playlist entries before and after the
 -- the currently played file. It does so by scanning the directory a file is
 -- located in when starting playback. It sorts the directory entries
@@ -124,8 +133,10 @@ local autoloaded = nil
 
 function find_and_add_entries()
     local path = mp.get_property("path", "")
-    local dir, filename = utils.split_path(path)
-    msg.trace(("dir: %s, filename: %s"):format(dir, filename))
+    local new_path = (exec(("brishzq.zsh ntag-recoverpath %q"):format(path)))
+
+    local dir, filename = utils.split_path(new_path)
+    msg.info(("dir: %s, filename: %s"):format(dir, filename))
     if o.disabled then
         msg.verbose("stopping: autoload disabled")
         return
