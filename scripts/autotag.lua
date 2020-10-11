@@ -28,6 +28,8 @@ local function tagger(event)
 
   local new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(abs_path)))
   log("Greened: " .. new_path)
+  mp.osd_message("Playing: " .. new_path, 10)
+
   mp.set_property(path_prop, new_path) -- doesn't work https://github.com/mpv-player/mpv/issues/8154
   mp.set_property("path", new_path)
   -- log("Updated path: " .. mp.get_property("path"))
