@@ -1,12 +1,8 @@
-function exec(cmd)
-  local f = assert(io.popen(cmd, 'r'))
-  local s = assert(f:read('*a'))
-  f:close()
-  return trim1(s)
-end
-function trim1(s)
-   return (s:gsub("^%s*(.-)%s*$", "%1"))
-end
+-- package.path = mp.get_script_directory() .. "/../scripts-shared/?.lua;" .. package.path
+-- package.path = "./scripts-shared/?.lua;" .. package.path
+package.path = os.getenv("HOME") .. "/.config/mpv/scripts-shared/?.lua;" .. package.path
+require("mpv_shared")
+
 -- This script automatically loads playlist entries before and after the
 -- the currently played file. It does so by scanning the directory a file is
 -- located in when starting playback. It sorts the directory entries
