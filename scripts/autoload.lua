@@ -1,6 +1,7 @@
 -- package.path = mp.get_script_directory() .. "/../scripts-shared/?.lua;" .. package.path
 -- package.path = "./scripts-shared/?.lua;" .. package.path
-package.path = os.getenv("HOME") .. "/.config/mpv/scripts-shared/?.lua;" .. package.path
+-- package.path = os.getenv("HOME") .. "/.config/mpv/scripts-shared/?.lua;" .. package.path
+package.path = mp.command_native({"expand-path", "~~/"}) .. "/scripts-shared/?.lua;" .. package.path
 require("mpv_shared")
 
 -- This script automatically loads playlist entries before and after the
@@ -38,31 +39,6 @@ o = {
 }
 options.read_options(o)
 
-function Set (t)
-    local set = {}
-    for _, v in pairs(t) do set[v] = true end
-    return set
-end
-
-function SetUnion (a,b)
-    local res = {}
-    for k in pairs(a) do res[k] = true end
-    for k in pairs(b) do res[k] = true end
-    return res
-end
-
-EXTENSIONS_VIDEO = Set {
-    'mkv', 'avi', 'mp4', 'ogv', 'webm', 'rmvb', 'flv', 'wmv', 'mpeg', 'mpg', 'm4v', '3gp'
-}
-
-EXTENSIONS_AUDIO = Set {
-    'mp3', 'wav', 'ogm', 'flac', 'm4a', 'wma', 'ogg', 'opus'
-}
-
-EXTENSIONS_IMAGES = Set {
-    'jpg', 'jpeg', 'png', 'tif', 'tiff', 'gif', 'webp', 'svg', 'bmp'
-}
-
 EXTENSIONS = Set {}
 if o.videos then EXTENSIONS = SetUnion(EXTENSIONS, EXTENSIONS_VIDEO) end
 if o.audio then EXTENSIONS = SetUnion(EXTENSIONS, EXTENSIONS_AUDIO) end
@@ -74,15 +50,6 @@ function add_files_at(index, files)
     for i = 1, #files do
         mp.commandv("loadfile", files[i], "append")
         mp.commandv("playlist-move", oldcount + i - 1, index + i - 1)
-    end
-end
-
-function get_extension(path)
-    match = string.match(path, "%.([^%.]+)$" )
-    if match == nil then
-        return "nomatch"
-    else
-        return match
     end
 end
 
@@ -128,9 +95,7 @@ end
 local autoloaded = nil
 
 function find_and_add_entries()
-    local path = mp.get_property("path", "")
-    local new_path = (exec(("brishzq.zsh ntag-recoverpath %q"):format(path)))
-
+    local new_path = getNewPath()
     local dir, filename = utils.split_path(new_path)
     msg.info(("dir: %s, filename: %s"):format(dir, filename))
     if o.disabled then

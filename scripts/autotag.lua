@@ -1,49 +1,84 @@
-package.path = os.getenv("HOME") .. "/.config/mpv/scripts-shared/?.lua;" .. package.path
+package.path = mp.command_native({"expand-path", "~~/"}) .. "/scripts-shared/?.lua;" .. package.path
 require("mpv_shared")
+---
+-- https://github.com/AN3223/dotfiles/blob/master/.config/mpv/scripts/auto-save-state.lua
+-- Runs write-watch-later-config periodically
+
+local utils = require 'mp.utils'
+local options = require 'mp.options'
+local o = { save_interval = 60 }
+options.read_options(o)
+
+local function save()
+  mp.commandv("set", "msg-level", "cplayer=warn")
+  mp.command("write-watch-later-config")
+  -- FIXME this overwrites msg-level=cplayer=? original value
+  mp.commandv("set", "msg-level", "cplayer=status")
+end
+
+local function save_if_pause(_, pause)
+  if pause then save() end
+end
+
+local function pause_timer_while_paused(_, pause)
+  if pause then
+    timer:stop()
+  end
+
+  if not pause and not timer:is_enabled() then
+    timer:resume()
+  end
+end
+
+timer = mp.add_periodic_timer(o.save_interval, save)
+mp.observe_property("pause", "bool", pause_timer_while_paused)
+mp.observe_property("pause", "bool", save_if_pause)
+
+---
 
 local function tagger(event)
-  local path_prop = "stream-open-filename"
-  -- local path_prop = "path"
-  local path = mp.get_property(path_prop)
-  local cwd = utils.getcwd()
-  if path == nil or cwd == nil then
-    do return end
+  save()
+  local abs_path = getPath("path")
+  local ext = get_extension(abs_path)
+  local hash = brishz(("md5m %q"):format(abs_path))
+  local watch_later = mp.find_config_file("watch_later")
+  if hash == nil or watch_later == nil then
+    log("empty watch_later or hash")
+    return
   end
-  -- @weird According to the doc, the path is the same as the cli arg. So why is this working with absolute path args?!
-  local abs_path = utils.join_path(cwd, path)
+  local hashfile = utils.join_path(watch_later, hash)
 
-  local new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(abs_path)))
-  log("Greened: " .. new_path)
+  local new_path = getNewPath()
+  local tagMode = (EXTENSIONS_VIDEO[ext] ~= nil)
+  if tagMode then
+    new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(abs_path)))
+    log("Greened: " .. new_path)
+  else
+    log("Skipped tagging: " .. abs_path)
+  end
   mp.osd_message("Playing: " .. new_path, 10)
 
-  mp.set_property(path_prop, new_path) -- doesn't work https://github.com/mpv-player/mpv/issues/8154
-  mp.set_property("path", new_path)
-  -- log("Updated path: " .. mp.get_property("path"))
-  
   function mg(event)
-      mp.unregister_event(mg)
-      log("end-file's reason: " .. event["reason"])
-      if event["reason"] == "eof" or event["reason"] == "stop" then
-        log(exec(("brishzq.zsh greens2teal %q"):format(new_path)))
-      else
-        log(exec(("brishzq.zsh green2aqua %q"):format(new_path)))
+    mp.unregister_event(mg)
+    log("end-file's reason: " .. event["reason"])
+    if event["reason"] == "eof" or event["reason"] == "stop" then
+      os.remove(hashfile)
+      if tagMode then
+        log(exec(("/usr/local/bin/brishzq.zsh greens2teal %q"):format(new_path)))
       end
+    else
+      if tagMode then
+        log(exec(("/usr/local/bin/brishzq.zsh green2aqua %q"):format(new_path)))
+      end
+      local new_path = ntagRecoverPath(new_path)
+      if new_path ~= abs_path then
+        local new_hash = brishz(("md5m %q"):format(new_path))
+        local new_hashfile = utils.join_path(watch_later, new_hash)
+        copyFile(hashfile, new_hashfile)
+      end
+    end
   end
   mp.register_event("end-file", mg)
-
-  --- did not remove the hook
-  -- function mg(new_path)
-  --   return function(event)
-  --     mp.unregister_event(mg(new_path)) -- this doesn't seem to work?
-  --     log("end-file's reason: " .. event["reason"])
-  --     log(exec(("brishzq.zsh green2teal %q"):format(new_path)))
-  --     if event["reason"] == "eof" or event["reason"] == "stop" then
-
-  --     end
-  --   end
-  -- end
-  -- mp.register_event("end-file", mg(new_path))
-  ---
 end
 
 mp.register_event("file-loaded", tagger)
@@ -51,20 +86,12 @@ mp.register_event("file-loaded", tagger)
 -- mp.add_hook("on_load", 0, tagger)
 
 local function load_renamer(hook)
-  local path_prop = "stream-open-filename"
-  local path = mp.get_property(path_prop)
-  local cwd = utils.getcwd()
-  if path == nil or cwd == nil then
-    do return end
-  end
-  -- @weird According to the doc, the path is the same as the cli arg. So why is this working with absolute path args?!
-  local abs_path = utils.join_path(cwd, path)
-
-  local new_path = (exec(("brishzq.zsh ntag-recoverpath %q"):format(abs_path)))
-  if not (abs_path == new_path) then
+  local abs_path = getPath()
+  local new_path = getNewPath()
+  if not (abs_path == new_path) and new_path ~= '' then
     log("load_renamer's new path: " .. new_path)
+    mp.set_property("stream-open-filename", new_path)
   end
-  mp.set_property("stream-open-filename", new_path)
 end
 mp.add_hook("on_load", 0, load_renamer)
 -- mp.add_hook("on_load_fail", 0, load_renamer) -- enabling this might provide useful redundancy in race conditions?
