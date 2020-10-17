@@ -1,3 +1,3 @@
 [submodule "scripts/mpv-manga-reader"]
-	path = scripts/mpv-manga-reader
+	path = mpv-manga-reader
 	url = https://github.com/Dudemanguy/mpv-manga-reader
