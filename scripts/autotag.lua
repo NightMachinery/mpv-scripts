@@ -46,6 +46,9 @@ mp.observe_property("pause", "bool", save_if_pause)
 local function tagger(event)
   save()
   local abs_path = getPath("path")
+  if abs_path == "" then
+    abs_path = getPath()
+  end
   local ext = get_extension(abs_path)
   local hash = brishz(("md5m %q"):format(abs_path))
   local watch_later = mp.find_config_file("watch_later")
@@ -56,14 +59,21 @@ local function tagger(event)
   local hashfile = utils.join_path(watch_later, hash)
 
   local new_path = getNewPath()
+  if new_path == "" then
+    mp.msg.warn("autotag has empty path")
+  else
+    -- log("new_path: " .. new_path)
+  end
   local tagMode = (EXTENSIONS_VIDEO[ext] ~= nil)
   if tagMode then
-    new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(abs_path)))
+    new_path = (exec(("brishzq.zsh ntag-add-givedest %q green"):format(new_path)))
     log("Greened: " .. new_path)
   else
     log("Skipped tagging: " .. abs_path)
   end
-  mp.osd_message("Playing: " .. new_path, 10)
+  _, filename, _ = string.match(new_path, "(.-)([^\\/]-%.?([^%.\\/]*))$")
+  -- mp.osd_message("test: " .. filename .. ", " .. new_path, 10)
+  mp.osd_message(filename, 10)
 
   function mg(event)
     mp.unregister_event(mg)

@@ -64,7 +64,8 @@ function getPath(path_prop)
   local path_prop = path_prop or "stream-open-filename"
   local path = mp.get_property(path_prop)
   local cwd = utils.getcwd()
-  if path == nil or cwd == nil then
+  if path == nil or path == "" or cwd == nil then
+    mp.msg.warn("getPath: Path or cwd is nil!")
     do return end
   end
   -- @weird According to the doc, the path is the same as the cli arg. So why is this working with absolute path args?!
@@ -76,7 +77,13 @@ function getNewPath(path_prop)
   return new_path
 end
 function ntagRecoverPath(path)
+  if path == "" then
+    mp.msg.warn("ntagRecoverPath: input path is empty")
+  end
   local new_path = (exec(("/usr/local/bin/brishzq.zsh ntag-recoverpath %q"):format(path)))
+  if new_path == "" then
+    mp.msg.warn("ntagRecoverPath: new_path is empty")
+  end
   return new_path
 end
 --
