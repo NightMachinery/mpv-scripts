@@ -21,7 +21,7 @@ function download_subs()
         args = { -- To see --debug output start mpv from terminal!
             subliminal, 'download', '-f',
             '-l', language[2], '-d', directory, filename
-        }
+        } -- `subliminal download -f -l en -d .`
     }
     res = utils.subprocess(table)
     -- if string.find(result.stdout, 'Downloaded 1 subtitle') then
