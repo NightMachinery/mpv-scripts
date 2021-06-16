@@ -80,9 +80,10 @@ function ntagRecoverPath(path)
   if path == "" then
     mp.msg.warn("ntagRecoverPath: input path is empty")
   end
-  local new_path = (exec(("/usr/local/bin/brishzq.zsh ntag-recoverpath %q"):format(path)))
-  if new_path == "" then
-    mp.msg.warn("ntagRecoverPath: new_path is empty")
+  local new_path = (exec(("/usr/local/bin/brishzq.zsh reval-true ntag-recoverpath %q"):format(path)))
+  if new_path == "" or not file_exists(new_path) then
+    mp.msg.warn("ntagRecoverPath: new_path doesn't exist")
+    return path
   end
   return new_path
 end
@@ -90,3 +91,10 @@ end
 function copyFile(src, dest)
   brishz(("cp %q %q"):format(src, dest))
 end
+--
+function file_exists(name)
+   -- returns false for dirs
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
+--
