@@ -1,0 +1,5 @@
+#+TITLE: mpv/config
+
+#+begin_src bsh.dash :results verbatim :exports both :wrap results
+lnrp . ~/.config/mpv
+#+end_src
