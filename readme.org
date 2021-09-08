@@ -1,5 +1,8 @@
 #+TITLE: mpv/config
 
+* link the config
 #+begin_src bsh.dash :results verbatim :exports both :wrap results
 lnrp . ~/.config/mpv
 #+end_src
+
+* install the =B Nazanin= font
