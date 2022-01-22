@@ -13,13 +13,16 @@ function exec_raw(cmd)
   f:close()
   return (s)
 end
+
 function exec(cmd)
   -- @alt mp.command_native, mp.commandv for args-based solutions
   return trim1(exec_raw(cmd))
 end
+
 function trim1(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
+
 function brishz(cmd)
   return exec("/usr/local/bin/brishzq.zsh " .. cmd)
 end
@@ -36,6 +39,7 @@ function SetUnion (a,b)
   for k in pairs(b) do res[k] = true end
   return res
 end
+
 function get_extension(path)
   match = string.match(path, "%.([^%.]+)$" )
   if match == nil then
@@ -72,10 +76,29 @@ function getPath(path_prop)
   local abs_path = utils.join_path(cwd, path)
   return abs_path
 end
+
+function getPath2(use_ntag_recover)
+  if use_ntag_recover == nil then
+    use_ntag_recover = true
+  end
+
+  local abs_path = getPath("path")
+  if abs_path == "" then
+    abs_path = getPath()
+  end
+
+  if use_ntag_recover then
+    abs_path = ntagRecoverPath(abs_path)
+  end
+
+  return abs_path
+end
+
 function getNewPath(path_prop)
   local new_path = ntagRecoverPath(getPath(path_prop))
   return new_path
 end
+
 function ntagRecoverPath(path)
   if path == "" then
     mp.msg.warn("ntagRecoverPath: input path is empty")

@@ -45,10 +45,7 @@ mp.observe_property("pause", "bool", save_if_pause)
 
 local function tagger(event)
   save()
-  local abs_path = getPath("path")
-  if abs_path == "" then
-    abs_path = getPath()
-  end
+  local abs_path = getPath2(false)
   local ext = get_extension(abs_path)
   local hash = brishz(("md5m %q"):format(abs_path))
   local watch_later = mp.find_config_file("watch_later")
