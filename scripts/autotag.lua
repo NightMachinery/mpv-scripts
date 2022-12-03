@@ -8,7 +8,8 @@ local utils = require 'mp.utils'
 local options = require 'mp.options'
 local o = {
   save_interval = 60,
-  enabled = true
+  enabled = false
+  -- enabled = true
 }
 options.read_options(o)
 if not o.enabled then
